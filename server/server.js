@@ -4,7 +4,7 @@ const dbConnection = require("./src/config/db.connection");
 const express = require("express");
 const path = require("path")
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-const port = process.env.PORT;
+const port = process.env.PORT || 5000;
 const server = http.createServer(app);
 
 const startServer = async () => {
@@ -12,7 +12,7 @@ const startServer = async () => {
         await dbConnection(); 
 
         server.listen(port, () => {
-            console.log(`Server running at http://localhost:${port}`);
+            console.log(`Server running at port: ${port}`);
         });
 
     } catch (err) {
