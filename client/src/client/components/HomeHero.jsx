@@ -393,7 +393,7 @@ export default function HomeHero() {
           {/* LEFT */}
           <motion.div style={{ opacity }} initial="hidden" animate="visible" className="home-hero-left">
             <motion.p variants={fadeUp} custom={0.2} className="home-hero-eyebrow">
-              Izel Studio · Eid Luxe Drop 2025
+              Izel Studio · Eid Luxe Drop 2026
             </motion.p>
 
             <motion.h1 variants={fadeUp} custom={0.4} className="home-hero-title">
