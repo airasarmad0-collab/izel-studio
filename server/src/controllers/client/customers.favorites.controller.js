@@ -9,7 +9,7 @@ const customerFavourites = async (req, res) => {
       .select("name price mainImage imageGallery metaTitle createdAt volume")
       .populate("volume", "name")
       .sort({ createdAt: -1 })
-      // .skip(9)
+      .skip(9)
       .limit(limit)
       .lean();
     
