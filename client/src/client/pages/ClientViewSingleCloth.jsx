@@ -26,8 +26,24 @@ import Footer from "../components/Footer";
 // ----------------------------------------------------------------------
 const getImageUrl = (url) => {
   if (!url) return null;
-  if (url.startsWith("http")) return url;
-  const baseUrl = import.meta.env.VITE_API_URL ;
+
+  const baseUrl = import.meta.env.VITE_API_URL;
+
+  // Fix old localhost URLs saved in DB
+  if (url.includes("localhost:5000")) {
+    const cleanPath = url.replace(
+      "http://localhost:5000",
+      ""
+    );
+    return `${baseUrl}${cleanPath}`;
+  }
+
+  // Already production URL
+  if (url.startsWith("https://")) {
+    return url;
+  }
+
+  // Relative path
   return `${baseUrl}${url}`;
 };
 
