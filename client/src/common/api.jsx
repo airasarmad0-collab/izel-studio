@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const apiBase = axios.create({
-  baseURL: import.meta.env.VITE_API_LINK,
+  baseURL: import.meta.env.API_LINK,
   headers: { "Content-Type": "application/json" },
 });
 
