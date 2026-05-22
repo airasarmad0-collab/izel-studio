@@ -412,7 +412,7 @@ const centerStyle = {
 };
 
 const logoStyle = {
-  height: "12vh",
+  height: "8vh",
   marginTop: "2vh",
   objectFit: "contain",
   display: "block",
