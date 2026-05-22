@@ -1022,7 +1022,6 @@ const ClientViewSingleCloth = () => {
                 </div>
 
                 <div className="sg-cta-row">
-                  {product.purchasingLink ? (
                     <a
                       href="https://wa.me/923001561562?text=Hello%20I%20want%20to%20contact%20you"
                       target="_blank"
@@ -1032,11 +1031,6 @@ const ClientViewSingleCloth = () => {
                       <ShoppingBag size={17} /> Purchase Now
                       <ExternalLink size={14} style={{ opacity: 0.7 }} />
                     </a>
-                  ) : (
-                    <button className="sg-btn-primary disabled">
-                      <ShoppingBag size={17} /> Coming Soon
-                    </button>
-                  )}
                   <button
                     className="sg-btn-icon"
                     title="Share"
