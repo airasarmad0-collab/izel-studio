@@ -760,7 +760,7 @@ const QuickShopModal = React.memo(({ product, onClose, onNavigateDetail }) => {
               marginTop: 24,
             }}
           >
-            <ShoppingBag size={17} /> Purchase Now
+            <ShoppingBag size={17} /> Shop Now
           </a>
           <button
             onClick={() => {

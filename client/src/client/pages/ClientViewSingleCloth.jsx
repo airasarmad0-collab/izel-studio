@@ -1028,7 +1028,7 @@ const ClientViewSingleCloth = () => {
                       rel="noreferrer"
                       className="sg-btn-primary"
                     >
-                      <ShoppingBag size={17} /> Purchase Now
+                      <ShoppingBag size={17} /> Shop Now
                       <ExternalLink size={14} style={{ opacity: 0.7 }} />
                     </a>
                   <button
