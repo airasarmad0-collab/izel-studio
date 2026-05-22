@@ -1,9 +1,11 @@
 import axios from "axios";
 
 const apiBase = axios.create({
-  baseURL: import.meta.env.API_LINK,
+  baseURL: import.meta.env.VITE_API_URL,
   headers: { "Content-Type": "application/json" },
 });
+
+console.log(import.meta.env.VITE_API_URL);
 
 // ✅ Request interceptor – attach token
 apiBase.interceptors.request.use(

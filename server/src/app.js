@@ -12,7 +12,7 @@ app.use(cors({
   origin: [
     "https://izelstudio.store",
     "https://www.izelstudio.store",
-    "https://izel-studio.vercel.app/"
+    "https://izel-studio.vercel.app"
   ],
   credentials: true
 }));
