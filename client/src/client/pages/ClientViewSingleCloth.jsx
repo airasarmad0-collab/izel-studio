@@ -741,7 +741,10 @@ const ImageSlider = ({ images, onImageClick }) => {
 // Related Card Component – updated image URL
 // ----------------------------------------------------------------------
 const RelatedCard = ({ product, onClick }) => {
-  const imageUrl = getImageUrl(product.mainImage);
+const imageUrl = getImageUrl(
+  product.mainImage || product.imageGallery?.[0]
+);
+console.log(imageUrl);
   return (
     <motion.div
       className="sg-related-card"
