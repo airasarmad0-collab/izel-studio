@@ -315,7 +315,7 @@ const ClientNavbar = () => {
               exit="exit"
               style={drawerStyle}
             >
-              {/* Header */}
+              {/* Header — fixed inside drawer */}
               <div style={drawerHeaderStyle}>
                 <img src={logo} alt="Izel Studio" style={{ height: "52px" }} />
                 <button style={hamburgerStyle} onClick={() => setOpenMobile(false)} aria-label="Close menu">
@@ -323,44 +323,47 @@ const ClientNavbar = () => {
                 </button>
               </div>
 
-              {/* Home */}
-              <motion.div custom={0} variants={drawerItemVariants} initial="closed" animate="open">
-                <Link
-                  to="/"
-                  style={drawerLinkStyle}
-                  onClick={() => setOpenMobile(false)}
-                >
-                  <Home size={16} strokeWidth={1.6} />
-                  <span>Home</span>
-                </Link>
-              </motion.div>
-
-              {/* Volume links */}
-              {volumes.map((v, i) => (
-                <motion.div key={v._id} custom={i + 1} variants={drawerItemVariants} initial="closed" animate="open">
+              {/* Scrollable content area */}
+              <div style={drawerScrollableStyle}>
+                {/* Home */}
+                <motion.div custom={0} variants={drawerItemVariants} initial="closed" animate="open">
                   <Link
-                    to={`/view/volume/${v._id}`}
+                    to="/"
                     style={drawerLinkStyle}
                     onClick={() => setOpenMobile(false)}
                   >
-                    {v.name}
+                    <Home size={16} strokeWidth={1.6} />
+                    <span>Home</span>
                   </Link>
                 </motion.div>
-              ))}
 
-              {/* Social — bottom of drawer */}
-              <motion.div
-                custom={volumes.length + 2}
-                variants={drawerItemVariants}
-                initial="closed"
-                animate="open"
-                style={{ marginTop: "auto", paddingTop: "24px", borderTop: "1px solid #eee" }}
-              >
-                <p style={{ fontSize: "11px", color: "#999", marginBottom: "12px", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                  Follow Us
-                </p>
-                <SocialLinks />
-              </motion.div>
+                {/* Volume links */}
+                {volumes.map((v, i) => (
+                  <motion.div key={v._id} custom={i + 1} variants={drawerItemVariants} initial="closed" animate="open">
+                    <Link
+                      to={`/view/volume/${v._id}`}
+                      style={drawerLinkStyle}
+                      onClick={() => setOpenMobile(false)}
+                    >
+                      {v.name}
+                    </Link>
+                  </motion.div>
+                ))}
+
+                {/* Social — bottom of scrollable area */}
+                <motion.div
+                  custom={volumes.length + 2}
+                  variants={drawerItemVariants}
+                  initial="closed"
+                  animate="open"
+                  style={{ paddingTop: "24px", borderTop: "1px solid #eee", marginTop: "16px" }}
+                >
+                  <p style={{ fontSize: "11px", color: "#999", marginBottom: "12px", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                    Follow Us
+                  </p>
+                  <SocialLinks />
+                </motion.div>
+              </div>
 
             </motion.div>
           </>
@@ -491,14 +494,16 @@ const cardStyle = {
   border: "1px solid #2e2e2e",
   padding: "12px 14px",
   borderRadius: "7px",
-  textAlign: "center",
+  textAlign: "center",        // ← centers the volume name text
+  justifyContent: "center",   // ← centers content if flex is applied
   cursor: "pointer",
   textDecoration: "none",
   color: "#e0e0e0",
   fontSize: "13px",
   fontWeight: 500,
   transition: "background 0.2s, border-color 0.2s",
-  display: "block",
+  display: "flex",            // ← changed to flex for reliable centering
+  alignItems: "center",       // ← vertically centers text
   letterSpacing: "0.02em",
 };
 
@@ -538,8 +543,14 @@ const drawerStyle = {
   display: "flex",
   flexDirection: "column",
   padding: "20px 24px 32px",
-  overflowY: "auto",
+  overflowY: "hidden",        // ← drawer itself doesn't scroll; inner area does
   boxShadow: "4px 0 32px rgba(0,0,0,0.12)",
+};
+
+const drawerScrollableStyle = {
+  flex: 1,                    // ← takes remaining height after the header
+  overflowY: "auto",          // ← this part scrolls
+  paddingRight: "4px",        // ← small offset so scrollbar doesn't overlap content
 };
 
 const drawerHeaderStyle = {
@@ -547,6 +558,7 @@ const drawerHeaderStyle = {
   justifyContent: "space-between",
   alignItems: "center",
   marginBottom: "28px",
+  flexShrink: 0,              // ← header never shrinks; always visible
 };
 
 const drawerLinkStyle = {
