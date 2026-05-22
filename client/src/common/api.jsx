@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const apiBase = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://izel-studio.onrender.com",
+  baseURL: import.meta.env.VITE_API_LINK,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -14,7 +14,7 @@ apiBase.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // ✅ Response interceptor – handle 401 (Unauthorized)
@@ -33,7 +33,7 @@ apiBase.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiBase;
