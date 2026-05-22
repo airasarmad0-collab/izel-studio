@@ -7,12 +7,16 @@ const bodyParser = require("body-parser");
 const path = require("path");
 
 app.use(cookieParser());
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  }),
-);
+
+app.use(cors({
+  origin: [
+    "https://izel-studio.vercel.app",
+    "https://izelstudio.store",
+    "https://www.izelstudio.store"
+  ],
+  credentials: true
+}));
+
 app.use(morgan("dev"));
 app.use(bodyParser.json({ limit: "2mb" }));
 app.use(bodyParser.urlencoded({ extended: false }));
