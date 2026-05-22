@@ -10,12 +10,13 @@ app.use(cookieParser());
 
 app.use(cors({
   origin: [
-    "https://izel-studio.vercel.app",
     "https://izelstudio.store",
-    "https://www.izelstudio.store"
+    "https://www.izelstudio.store",
+    "https://izel-studio.vercel.app/"
   ],
   credentials: true
 }));
+app.set('trust proxy', 1); // 👈 IMPORTANT FIX FOR RENDER
 
 app.use(morgan("dev"));
 app.use(bodyParser.json({ limit: "2mb" }));
