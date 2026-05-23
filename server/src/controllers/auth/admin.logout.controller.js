@@ -1,20 +1,17 @@
-const {
-  OK,
-  SERVER_ERROR
-} = require("../../config/get.codes");
+const { OK, SERVER_ERROR } = require("../../config/get.codes");
 
 const adminLogout = async (req, res) => {
   try {
     res.clearCookie("AdminAuthToken", {
       httpOnly: true,
-      secure: false, // true in production (HTTPS)
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
     });
 
     return res.status(OK).json({
       success: true,
       message: "Admin logged out successfully",
-      status: OK
+      status: OK,
     });
 
   } catch (err) {
@@ -22,7 +19,7 @@ const adminLogout = async (req, res) => {
       success: false,
       message: "Logout failed",
       err: err.message,
-      status: SERVER_ERROR
+      status: SERVER_ERROR,
     });
   }
 };

@@ -57,12 +57,12 @@ const adminSignup = async (req, res) => {
       },
     );
 
-    res.cookie("AdminAuthToken", token, {
-      httpOnly: true,
-      secure: false, // true in production (HTTPS)
-      sameSite: "lax",
-      maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days
-    });
+   res.cookie("AdminAuthToken", token, {
+  httpOnly: true,
+  secure: true,        // MUST be true in production
+  sameSite: "none",    // 🔥 REQUIRED for cross-domain
+  maxAge: 15 * 24 * 60 * 60 * 1000,
+});
 
     return res.status(OK).json({
       success: true,
@@ -75,7 +75,6 @@ const adminSignup = async (req, res) => {
       },
       status: OK,
     });
-
   } catch (err) {
     return res.status(SERVER_ERROR).json({
       success: false,
