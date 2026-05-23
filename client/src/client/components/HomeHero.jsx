@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import video1 from "../../../public/video_1.mp4";
+import video1 from "../../../public/video_3.mp4";
 
 gsap.registerPlugin(ScrollTrigger);
 
