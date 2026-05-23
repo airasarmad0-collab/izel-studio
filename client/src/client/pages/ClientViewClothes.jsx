@@ -41,12 +41,24 @@ const FALLBACK_DOMAIN = "https://izel-studio.onrender.com";
 const getImageUrl = (url) => {
   if (!url) return null;
 
-  if (url.startsWith("http")) return url;
+  // Fix old localhost URLs saved in DB
+  if (url.includes("localhost:5000")) {
+    const cleanPath = url.replace(
+      "http://localhost:5000",
+      ""
+    );
+    return `https://izel-studio.onrender.com${cleanPath}`;
+  }
+
+  if (url.startsWith("https://")) {
+    return url;
+  }
 
   const cleanPath = url.startsWith("/") ? url : `/${url}`;
 
-  return `https://izel-studio.onrender.com/${cleanPath}`;
+  return `https://izel-studio.onrender.com${cleanPath}`;
 };
+
 // ----------------------------------------------------------------------
 // Global styles (fully responsive)
 // ----------------------------------------------------------------------
@@ -687,6 +699,7 @@ const QuickShopModal = React.memo(({ product, onClose, onNavigateDetail }) => {
                   objectFit: "cover",
                 }}
                 draggable={false}
+                onError={(e) => (e.target.src = "https://via.placeholder.com/400x500?text=No+Image")}
               />
             </AnimatePresence>
             {allImages.length > 1 && (
@@ -732,6 +745,7 @@ const QuickShopModal = React.memo(({ product, onClose, onNavigateDetail }) => {
                   className={`modal-thumb ${i === idx ? "active" : ""}`}
                   onClick={() => goTo(i)}
                   alt=""
+                  onError={(e) => (e.target.src = "https://via.placeholder.com/60x80?text=No+Image")}
                 />
               ))}
             </div>
@@ -795,7 +809,7 @@ const QuickShopModal = React.memo(({ product, onClose, onNavigateDetail }) => {
 QuickShopModal.displayName = "QuickShopModal";
 
 /* ----------------------------------------------------------------------
-   PRODUCT CARD
+   PRODUCT CARD (FIXED - using getImageUrl properly)
 ---------------------------------------------------------------------- */
 const ProductCard = React.memo(
   ({ product, index, onQuickView, onNavigateDetail, cardRef }) => {
@@ -820,6 +834,7 @@ const ProductCard = React.memo(
             className="client-img-main"
             alt={product.name}
             loading="lazy"
+            onError={(e) => (e.target.src = "https://via.placeholder.com/400x500?text=No+Image")}
           />
           {hasHover && (
             <img
@@ -827,6 +842,7 @@ const ProductCard = React.memo(
               className="client-img-hover"
               alt="hover"
               loading="lazy"
+              onError={(e) => (e.target.src = "https://via.placeholder.com/400x500?text=No+Image")}
             />
           )}
           <div
@@ -1068,7 +1084,7 @@ const ProductListing = ({ volumeId }) => {
 };
 
 /* ----------------------------------------------------------------------
-   PRODUCT DETAIL PAGE
+   PRODUCT DETAIL PAGE (FIXED - using getImageUrl properly)
 ---------------------------------------------------------------------- */
 const ProductDetail = ({ clothid }) => {
   const navigate = useNavigate();
@@ -1083,8 +1099,8 @@ const ProductDetail = ({ clothid }) => {
         const res = await apiBase.get(`/api/client/get/product/${clothid}`);
         const prod = res.data.data;
         setProduct(prod);
-        setActiveImage(getImageUrl(prod.mainImage));
-        console.log(getImageUrl(prod.mainImage))
+        const mainImageUrl = getImageUrl(prod.mainImage);
+        setActiveImage(mainImageUrl);
       } catch (error) {
         console.error(error);
         toast.error("Product not found");
@@ -1120,7 +1136,6 @@ const ProductDetail = ({ clothid }) => {
     const imgs = [product.mainImage, ...(product.imageGallery || [])].filter(
       Boolean,
     );
-        console.log(imgs.map(getImageUrl));
     return imgs.map(getImageUrl);
   }, [product.mainImage, product.imageGallery]);
 
@@ -1146,6 +1161,7 @@ const ProductDetail = ({ clothid }) => {
             alt={product.name}
             className="detail-main-img"
             loading="eager"
+            onError={(e) => (e.target.src = "https://via.placeholder.com/400x500?text=No+Image")}
           />
           {allImages.length > 1 && (
             <div className="thumb-list">
@@ -1156,6 +1172,7 @@ const ProductDetail = ({ clothid }) => {
                   className={`thumb-img ${activeImage === img ? "active" : ""}`}
                   onClick={() => setActiveImage(img)}
                   alt=""
+                  onError={(e) => (e.target.src = "https://via.placeholder.com/70x90?text=No+Image")}
                 />
               ))}
             </div>
@@ -1183,37 +1200,20 @@ const ProductDetail = ({ clothid }) => {
           <p style={{ lineHeight: 1.7, color: "var(--client-muted)" }}>
             {product.description || "No description available."}
           </p>
-          {product.purchasingLink ? (
-            <a
-              href={product.purchasingLink}
-              target="_blank"
-              rel="noreferrer"
-              className="client-buy-btn"
-              style={{
-                display: "inline-flex",
-                width: "auto",
-                padding: "13px 32px",
-                marginTop: 24,
-              }}
-            >
-              <ShoppingBag size={17} /> Purchase Now
-            </a>
-          ) : (
-            <button
-              disabled
-              style={{
-                background: "#cbd5e1",
-                padding: "13px 32px",
-                border: "none",
-                borderRadius: 40,
-                fontWeight: 600,
-                marginTop: 24,
-                cursor: "not-allowed",
-              }}
-            >
-              Coming Soon
-            </button>
-          )}
+          <a
+            href="https://wa.me/923001561562?text=Hello%20I%20want%20to%20contact%20you"
+            target="_blank"
+            rel="noreferrer"
+            className="client-buy-btn"
+            style={{
+              display: "inline-flex",
+              width: "auto",
+              padding: "13px 32px",
+              marginTop: 24,
+            }}
+          >
+            <ShoppingBag size={17} /> Shop Now
+          </a>
         </div>
       </div>
     </div>
