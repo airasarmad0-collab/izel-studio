@@ -31,15 +31,12 @@ import apiBase from "../../common/api";
 
 // ----------------------------------------------------------------------
 // Helper: make image URL absolute (relative -> full URL)
+// EXACT SAME FUNCTION as in ClientViewSingleCloth
 // ----------------------------------------------------------------------
-const API_BASE =
-  import.meta.env.VITE_API_URL || "https://izel-studio.onrender.com";
-
-const PRODUCTION_DOMAIN = "https://izelstudio.store";
-const FALLBACK_DOMAIN = "https://izel-studio.onrender.com";
-
 const getImageUrl = (url) => {
   if (!url) return null;
+
+  const baseUrl = import.meta.env.VITE_API_URL;
 
   // Fix old localhost URLs saved in DB
   if (url.includes("localhost:5000")) {
@@ -47,16 +44,16 @@ const getImageUrl = (url) => {
       "http://localhost:5000",
       ""
     );
-    return `https://izel-studio.onrender.com${cleanPath}`;
+    return `${baseUrl}${cleanPath}`;
   }
 
-  if (url.startsWith("https://")) {
+  // Already absolute URL (production or other)
+  if (url.startsWith("https://") || url.startsWith("http://")) {
     return url;
   }
 
-  const cleanPath = url.startsWith("/") ? url : `/${url}`;
-
-  return `https://izel-studio.onrender.com${cleanPath}`;
+  // Relative path
+  return `${baseUrl}${url}`;
 };
 
 // ----------------------------------------------------------------------
@@ -809,7 +806,7 @@ const QuickShopModal = React.memo(({ product, onClose, onNavigateDetail }) => {
 QuickShopModal.displayName = "QuickShopModal";
 
 /* ----------------------------------------------------------------------
-   PRODUCT CARD (FIXED - using getImageUrl properly)
+   PRODUCT CARD 
 ---------------------------------------------------------------------- */
 const ProductCard = React.memo(
   ({ product, index, onQuickView, onNavigateDetail, cardRef }) => {
@@ -818,6 +815,11 @@ const ProductCard = React.memo(
     const hoverImageUrl = hasHover
       ? getImageUrl(product.imageGallery[0])
       : null;
+    
+    // Log to debug
+    console.log("Product:", product.name);
+    console.log("Main Image URL:", mainImageUrl);
+    console.log("Hover Image URL:", hoverImageUrl);
 
     return (
       <motion.div
@@ -834,7 +836,10 @@ const ProductCard = React.memo(
             className="client-img-main"
             alt={product.name}
             loading="lazy"
-            onError={(e) => (e.target.src = "https://via.placeholder.com/400x500?text=No+Image")}
+            onError={(e) => {
+              console.error("Main image failed to load:", mainImageUrl);
+              e.target.src = "https://via.placeholder.com/400x500?text=No+Image";
+            }}
           />
           {hasHover && (
             <img
@@ -842,7 +847,10 @@ const ProductCard = React.memo(
               className="client-img-hover"
               alt="hover"
               loading="lazy"
-              onError={(e) => (e.target.src = "https://via.placeholder.com/400x500?text=No+Image")}
+              onError={(e) => {
+                console.error("Hover image failed to load:", hoverImageUrl);
+                e.target.src = "https://via.placeholder.com/400x500?text=No+Image";
+              }}
             />
           )}
           <div
@@ -923,6 +931,7 @@ const ProductListing = ({ volumeId }) => {
       const res = await apiBase.get(
         `/api/client/get-all/products/${volumeId}?${params}`,
       );
+      console.log("API Response:", res.data);
       setProducts(res.data.data || []);
       setVolume(res.data.volume);
       setTotalPages(res.data.pagination?.totalPages || 1);
@@ -1084,7 +1093,7 @@ const ProductListing = ({ volumeId }) => {
 };
 
 /* ----------------------------------------------------------------------
-   PRODUCT DETAIL PAGE (FIXED - using getImageUrl properly)
+   PRODUCT DETAIL PAGE
 ---------------------------------------------------------------------- */
 const ProductDetail = ({ clothid }) => {
   const navigate = useNavigate();
@@ -1101,6 +1110,7 @@ const ProductDetail = ({ clothid }) => {
         setProduct(prod);
         const mainImageUrl = getImageUrl(prod.mainImage);
         setActiveImage(mainImageUrl);
+        console.log("Product Detail - Main Image URL:", mainImageUrl);
       } catch (error) {
         console.error(error);
         toast.error("Product not found");
@@ -1136,6 +1146,7 @@ const ProductDetail = ({ clothid }) => {
     const imgs = [product.mainImage, ...(product.imageGallery || [])].filter(
       Boolean,
     );
+    console.log("All Images URLs:", imgs.map(getImageUrl));
     return imgs.map(getImageUrl);
   }, [product.mainImage, product.imageGallery]);
 
@@ -1161,7 +1172,10 @@ const ProductDetail = ({ clothid }) => {
             alt={product.name}
             className="detail-main-img"
             loading="eager"
-            onError={(e) => (e.target.src = "https://via.placeholder.com/400x500?text=No+Image")}
+            onError={(e) => {
+              console.error("Detail main image failed:", activeImage);
+              e.target.src = "https://via.placeholder.com/400x500?text=No+Image";
+            }}
           />
           {allImages.length > 1 && (
             <div className="thumb-list">
@@ -1172,7 +1186,9 @@ const ProductDetail = ({ clothid }) => {
                   className={`thumb-img ${activeImage === img ? "active" : ""}`}
                   onClick={() => setActiveImage(img)}
                   alt=""
-                  onError={(e) => (e.target.src = "https://via.placeholder.com/70x90?text=No+Image")}
+                  onError={(e) => {
+                    e.target.src = "https://via.placeholder.com/70x90?text=No+Image";
+                  }}
                 />
               ))}
             </div>
