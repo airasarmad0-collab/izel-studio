@@ -32,13 +32,23 @@ import apiBase from "../../common/api";
 // ----------------------------------------------------------------------
 // Helper: make image URL absolute (relative -> full URL)
 // ----------------------------------------------------------------------
+const API_BASE =
+  import.meta.env.VITE_API_URL || "https://izel-studio.onrender.com";
+
 const getImageUrl = (url) => {
   if (!url) return null;
-  if (url.startsWith("http")) return url;
-  const baseUrl = import.meta.env.VITE_API_URL;
-  return `${baseUrl}${url}`;
-};
 
+  // already absolute URL
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+
+  // ensure proper slash handling
+  const cleanBase = API_BASE.replace(/\/$/, "");
+  const cleanPath = url.startsWith("/") ? url : `/${url}`;
+
+  return `${cleanBase}${cleanPath}`;
+};
 // ----------------------------------------------------------------------
 // Global styles (fully responsive)
 // ----------------------------------------------------------------------
