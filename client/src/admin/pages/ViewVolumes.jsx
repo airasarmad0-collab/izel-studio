@@ -3,7 +3,15 @@ import apiBase from "../../common/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import gsap from "gsap";
-import { Search, Trash2, Edit3, Eye, Layers, Loader, PlusCircle } from "lucide-react";
+import {
+  Search,
+  Trash2,
+  Edit3,
+  Eye,
+  Layers,
+  Loader,
+  PlusCircle,
+} from "lucide-react";
 import AdminNavbar from "../components/AdminNavbar";
 import { Helmet } from "react-helmet-async";
 
@@ -34,7 +42,7 @@ const ViewVolumes = () => {
           duration: 0.6,
           stagger: 0.08,
           ease: "power3.out",
-        }
+        },
       );
     }
   }, [volumes]);
@@ -44,7 +52,7 @@ const ViewVolumes = () => {
       setLoading(true);
 
       const res = await apiBase.get(
-        `/api/admin/get-all/volumes?page=${page}&search=${search}`
+        `/api/admin/get-all/volumes?page=${page}&search=${search}`,
       );
 
       setVolumes(res.data.data || []);
@@ -60,7 +68,9 @@ const ViewVolumes = () => {
     if (!window.confirm("Are you sure you want to delete this volume?")) return;
 
     try {
-      await apiBase.delete(`/api/admin/delete/volume/${id}`);
+      await apiBase.delete(`/api/admin/delete/volume/${id}`, {
+        withCredentials: true,
+      });
       toast.success("Volume deleted successfully");
       fetchVolumes();
     } catch (err) {
