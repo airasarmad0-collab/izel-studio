@@ -1086,6 +1086,7 @@ const ProductDetail = ({ clothid }) => {
         const prod = res.data.data;
         setProduct(prod);
         setActiveImage(getImageUrl(prod.mainImage));
+        console.log(getImageUrl(prod.mainImage))
       } catch (error) {
         console.error(error);
         toast.error("Product not found");
@@ -1121,6 +1122,7 @@ const ProductDetail = ({ clothid }) => {
     const imgs = [product.mainImage, ...(product.imageGallery || [])].filter(
       Boolean,
     );
+        console.log(imgs.map(getImageUrl));
     return imgs.map(getImageUrl);
   }, [product.mainImage, product.imageGallery]);
 
