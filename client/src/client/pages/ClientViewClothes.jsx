@@ -41,13 +41,11 @@ const FALLBACK_DOMAIN = "https://izel-studio.onrender.com";
 const getImageUrl = (url) => {
   if (!url) return null;
 
-  // already full URL
   if (url.startsWith("http")) return url;
 
   const cleanPath = url.startsWith("/") ? url : `/${url}`;
 
-  // ALWAYS prefer production domain for images
-  return `${PRODUCTION_DOMAIN}${cleanPath}`;
+  return `https://izel-studio.onrender.com/${cleanPath}`;
 };
 // ----------------------------------------------------------------------
 // Global styles (fully responsive)
