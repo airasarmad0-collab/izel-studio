@@ -22,8 +22,8 @@ const CreateCloth = () => {
     name: "",
     description: "",
     price: "",
-    mainImage: null,          // will store File object
-    imageGallery: [],         // array of File objects
+    mainImage: null, // will store File object
+    imageGallery: [], // array of File objects
     purchasingLink: "",
     type: "unstitched",
     metaTitle: "",
@@ -40,7 +40,7 @@ const CreateCloth = () => {
       gsap.fromTo(
         modalRef.current,
         { scale: 0.85, opacity: 0, y: 40 },
-        { scale: 1, opacity: 1, y: 0, duration: 0.4 }
+        { scale: 1, opacity: 1, y: 0, duration: 0.4 },
       );
     }
   }, [open]);
@@ -91,7 +91,9 @@ const CreateCloth = () => {
 
     // validation
     if (!form.name || !form.price || !form.metaTitle || !form.mainImage) {
-      toast.error("Please fill required fields (name, price, image, metaTitle)");
+      toast.error(
+        "Please fill required fields (name, price, image, metaTitle)",
+      );
       return;
     }
 
@@ -105,7 +107,7 @@ const CreateCloth = () => {
     formData.append("purchasingLink", form.purchasingLink);
 
     // tags as comma-separated string (backend expects a string)
-    const tagsString = form.tags.filter(t => t.trim()).join(",");
+    const tagsString = form.tags.filter((t) => t.trim()).join(",");
     formData.append("tags", tagsString);
 
     // main image file
@@ -122,8 +124,11 @@ const CreateCloth = () => {
         `/api/admin/create/product/${volumeId}`,
         formData,
         {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          withCredentials: true,
+        },
       );
       toast.success(res.data.message || "Product created!");
 
@@ -318,7 +323,9 @@ const CreateCloth = () => {
                   <textarea
                     placeholder="Product Description"
                     value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, description: e.target.value })
+                    }
                     style={styles.textarea}
                   />
 
@@ -326,7 +333,9 @@ const CreateCloth = () => {
                     type="number"
                     placeholder="Price *"
                     value={form.price}
-                    onChange={(e) => setForm({ ...form, price: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, price: e.target.value })
+                    }
                     style={styles.input}
                     required
                   />
@@ -401,7 +410,9 @@ const CreateCloth = () => {
                         <input
                           type="file"
                           accept="image/*"
-                          onChange={(e) => handleGalleryChange(e.target.files[0], i)}
+                          onChange={(e) =>
+                            handleGalleryChange(e.target.files[0], i)
+                          }
                         />
                         <button
                           type="button"
@@ -418,7 +429,9 @@ const CreateCloth = () => {
                   <input
                     placeholder="Meta Title *"
                     value={form.metaTitle}
-                    onChange={(e) => setForm({ ...form, metaTitle: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, metaTitle: e.target.value })
+                    }
                     style={styles.input}
                     required
                   />
@@ -426,14 +439,18 @@ const CreateCloth = () => {
                   <textarea
                     placeholder="Meta Description"
                     value={form.metaDescription}
-                    onChange={(e) => setForm({ ...form, metaDescription: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, metaDescription: e.target.value })
+                    }
                     style={styles.textarea}
                   />
 
                   <input
                     placeholder="Purchase Link (WhatsApp)"
                     value={form.purchasingLink}
-                    onChange={(e) => setForm({ ...form, purchasingLink: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, purchasingLink: e.target.value })
+                    }
                     style={styles.input}
                   />
 
