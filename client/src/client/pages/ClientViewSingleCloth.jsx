@@ -941,6 +941,8 @@ const ClientViewSingleCloth = () => {
   const displayTitle = product
     ? `Izel Studio - ${product.metaTitle || product.name}`
     : "Izel Studio - Loading";
+   
+  console.log(displayTitle)
   const pageDescription =
     product?.metaDescription ||
     product?.description ||
