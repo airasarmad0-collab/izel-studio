@@ -28,7 +28,7 @@ import {
   RefreshCw,
   ExternalLink
 } from "lucide-react";
-
+import {Helmet} from "react-helmet-async"
 const PLACEHOLDER = "https://via.placeholder.com/400x500?text=No+Image";
 
 const ViewClothes = () => {
@@ -141,6 +141,9 @@ const ViewClothes = () => {
 
   return (
     <>
+      <Helmet>
+
+      </Helmet>
       <AdminNavbar />
       <div style={{ padding: "80px 20px 20px 20px", background: "#0e1526", minHeight: "100vh", color: "#fff" }}>
         
@@ -527,8 +530,7 @@ const ViewClothes = () => {
                     </button>
                   </div>
                   <p style={{ color: "#4a90e2", fontSize: "20px", fontWeight: "bold", margin: "5px 0" }}>
-                    <DollarSign size={16} style={{ display: "inline" }} />
-                    {formatPrice(p.price)}
+PKR                    {formatPrice(p.price)}
                   </p>
                   {p.description && (
                     <p style={{ color: "#8892b0", fontSize: "14px", margin: "5px 0" }}>
