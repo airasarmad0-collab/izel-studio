@@ -45,8 +45,8 @@ const createProduct = async (req, res) => {
       metaTitle,
       metaDescription,
       volume: volumeId,
-      mainImage: `/uploads/products/${mainImage}`,
-      imageGallery: gallery.map(img => `/uploads/products/${img}`),
+      mainImage: `https://izel-studio.onrender.com/uploads/products/${mainImage}`,
+      imageGallery: gallery.map(img => `https://izel-studio.onrender.com/uploads/products/${img}`),
     });
 
     return res.status(OK).json({
