@@ -3,7 +3,6 @@ const app = express();
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
-const bodyParser = require("body-parser");
 const path = require("path");
 
 app.use(cookieParser());
@@ -19,8 +18,8 @@ app.use(cors({
 app.set('trust proxy', 1); // 👈 IMPORTANT FIX FOR RENDER
 
 app.use(morgan("dev"));
-app.use(bodyParser.json({ limit: "2mb" }));
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: false }));
 require("dotenv").config();
 
 // Api's endpoints: 
@@ -62,7 +61,7 @@ app.use(compression({
 app.use("/api/admin/auth" , AdminAuthRouter);
 
 // admin function api's: 
-app.use("/api/admin/" , AdminFunctionRouter);
+app.use("/api/admin" , AdminFunctionRouter);
 
 // client function api's: 
 app.use("/api/client" , volumesLimiter , ClientFunctionRouter);

@@ -15,7 +15,6 @@ import HomePage from "./client/pages/HomePage";
 import ClientViewClothes from "./client/pages/ClientViewClothes";
 import ClientViewSingleCloth from "./client/pages/ClientViewSingleCloth";
 
-// ✅ Robust ProtectedRoute – uses navigate + interval to detect token removal
 const ProtectedRoute = ({ children }) => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
