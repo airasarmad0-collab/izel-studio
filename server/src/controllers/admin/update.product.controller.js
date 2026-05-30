@@ -12,8 +12,6 @@ const updateProduct = async (req, res) => {
       description,
       tags,
       price,
-      mainImage,
-      imageGallery,
       purchasingLink,
       type,
       volume,
@@ -37,6 +35,7 @@ const updateProduct = async (req, res) => {
       });
     }
 
+    // Check volume
     if (volume) {
       const volumeExists = await VolumeModel.findById(volume);
 
@@ -50,16 +49,29 @@ const updateProduct = async (req, res) => {
       product.volume = volume;
     }
 
+    // Text fields update
     if (name) product.name = name;
     if (description) product.description = description;
     if (tags) product.tags = tags;
     if (price !== undefined) product.price = price;
-    if (mainImage) product.mainImage = mainImage;
-    if (imageGallery) product.imageGallery = imageGallery;
     if (purchasingLink) product.purchasingLink = purchasingLink;
     if (type) product.type = type;
     if (metaTitle) product.metaTitle = metaTitle;
     if (metaDescription) product.metaDescription = metaDescription;
+
+    // 🔥 IMAGE HANDLING (IMPORTANT FIX)
+    const mainImageFile = req.files?.mainImage?.[0]?.filename;
+    const galleryFiles = req.files?.imageGallery?.map(f => f.filename);
+
+    const BASE_URL = "https://izel-studio.onrender.com/uploads/products/";
+
+    if (mainImageFile) {
+      product.mainImage = BASE_URL + mainImageFile;
+    }
+
+    if (galleryFiles && galleryFiles.length > 0) {
+      product.imageGallery = galleryFiles.map(img => BASE_URL + img);
+    }
 
     const updatedProduct = await product.save();
 
@@ -68,6 +80,7 @@ const updateProduct = async (req, res) => {
       message: "Product updated successfully!",
       data: updatedProduct,
     });
+
   } catch (err) {
     console.log(err);
 
