@@ -3,7 +3,7 @@ const path = require("path");
 const fs = require("fs");
 
 // Folder setup (Render disk)
-const uploadPath = path.join("/uploads", "products");
+const uploadPath = path.join(process.cwd(), "uploads", "products");
 
 // 🔥 IMPORTANT: ensure folder exists
 if (!fs.existsSync(uploadPath)) {
