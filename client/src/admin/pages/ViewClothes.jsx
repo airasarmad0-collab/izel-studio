@@ -40,19 +40,18 @@ const ViewClothes = () => {
   const [products, setProducts] = useState([]);
   const [volume, setVolume] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [editProduct, setEditProduct] = useState(null); // holds the product being edited
+  const [editProduct, setEditProduct] = useState(null);
   const [viewMode, setViewMode] = useState("grid");
   const [updateLoading, setUpdateLoading] = useState(false);
 
-  // Edit form state (mirrors CreateCloth)
   const emptyEditForm = {
     name: "",
     description: "",
     price: "",
-    mainImage: null,         // File object (new upload) or null
-    mainImagePreview: "",    // preview URL (existing or new)
-    imageGallery: [],        // array of File objects or null (null = keep existing)
-    galleryPreviews: [],     // preview URLs
+    mainImage: null,
+    mainImagePreview: "",
+    imageGallery: [],      // File object or null (null = keep existing)
+    galleryPreviews: [],   // preview URLs (existing or new blob)
     purchasingLink: "",
     type: "unstitched",
     metaTitle: "",
@@ -100,7 +99,7 @@ const ViewClothes = () => {
       price: p.price || "",
       mainImage: null,
       mainImagePreview: p.mainImage || "",
-      imageGallery: (p.imageGallery || []).map(() => null), // placeholders for existing
+      imageGallery: (p.imageGallery || []).map(() => null), // null = keep existing
       galleryPreviews: p.imageGallery || [],
       purchasingLink: p.purchasingLink || "",
       type: p.type || "unstitched",
@@ -206,7 +205,17 @@ const ViewClothes = () => {
       formData.append("mainImage", editForm.mainImage);
     }
 
-    // Only append gallery files that were newly chosen
+    // Send existing gallery URLs (slots where file is null = keep as-is)
+    // Backend will use these to rebuild the full ordered gallery
+    const existingUrls = editForm.imageGallery
+      .map((file, i) => (file === null ? editForm.galleryPreviews[i] : null))
+      .filter((url) => url && url !== "");
+
+    existingUrls.forEach((url) => {
+      formData.append("existingGallery", url);
+    });
+
+    // Only append newly chosen gallery files
     editForm.imageGallery.forEach((file) => {
       if (file) formData.append("imageGallery", file);
     });
@@ -221,8 +230,6 @@ const ViewClothes = () => {
           withCredentials: true,
         }
       );
-
-      console.log(res)
 
       if (res.data.success) {
         toast.success("Product updated successfully!");
@@ -252,7 +259,7 @@ const ViewClothes = () => {
     navigate(`/admin/dashboard/view/cloth/${clothId}`);
   };
 
-  // ───────── SHARED STYLES (matches CreateCloth) ─────────
+  // ───────── SHARED STYLES ─────────
   const buttonBase = {
     display: "flex",
     alignItems: "center",
@@ -390,12 +397,8 @@ const ViewClothes = () => {
               borderRadius: "8px",
               transition: "background 0.2s",
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.background = "#2a3a5e")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.background = "#1e2a47")
-            }
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#2a3a5e")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "#1e2a47")}
           >
             <ArrowLeft size={18} />
             Back to Volumes
@@ -424,10 +427,7 @@ const ViewClothes = () => {
                 {volume?.name || "Collection Products"}
               </h1>
               <p style={{ color: "#8892b0", marginTop: 5 }}>
-                <Package
-                  size={16}
-                  style={{ display: "inline", marginRight: 5 }}
-                />
+                <Package size={16} style={{ display: "inline", marginRight: 5 }} />
                 Total Products: {products.length}
               </p>
             </div>
@@ -471,10 +471,7 @@ const ViewClothes = () => {
         {/* PRODUCTS DISPLAY */}
         {loading ? (
           <div style={{ textAlign: "center", padding: "40px" }}>
-            <RefreshCw
-              size={40}
-              style={{ animation: "spin 1s linear infinite" }}
-            />
+            <RefreshCw size={40} style={{ animation: "spin 1s linear infinite" }} />
             <p style={{ marginTop: 10 }}>Loading products...</p>
           </div>
         ) : products.length === 0 ? (
@@ -531,8 +528,7 @@ const ViewClothes = () => {
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = "translateY(-5px)";
-                  e.currentTarget.style.boxShadow =
-                    "0 10px 20px rgba(0,0,0,0.3)";
+                  e.currentTarget.style.boxShadow = "0 10px 20px rgba(0,0,0,0.3)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = "translateY(0)";
@@ -556,9 +552,7 @@ const ViewClothes = () => {
                     onMouseLeave={(e) => (e.currentTarget.style.opacity = "0")}
                   >
                     <Eye size={30} color="#fff" />
-                    <span style={{ color: "#fff", fontWeight: "bold" }}>
-                      View Details
-                    </span>
+                    <span style={{ color: "#fff", fontWeight: "bold" }}>View Details</span>
                   </div>
                   {p.stock !== undefined && (
                     <span
@@ -577,11 +571,7 @@ const ViewClothes = () => {
                         gap: "4px",
                       }}
                     >
-                      {p.stock > 0 ? (
-                        <CheckCircle size={12} />
-                      ) : (
-                        <AlertCircle size={12} />
-                      )}
+                      {p.stock > 0 ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
                       {p.stock > 0 ? `In Stock (${p.stock})` : "Out of Stock"}
                     </span>
                   )}
@@ -639,13 +629,7 @@ const ViewClothes = () => {
                   </p>
 
                   {p.description && (
-                    <p
-                      style={{
-                        color: "#8892b0",
-                        fontSize: "14px",
-                        margin: "10px 0",
-                      }}
-                    >
+                    <p style={{ color: "#8892b0", fontSize: "14px", margin: "10px 0" }}>
                       {p.description.length > 80
                         ? p.description.substring(0, 80) + "..."
                         : p.description}
@@ -948,7 +932,7 @@ const ViewClothes = () => {
         )}
       </div>
 
-      {/* ───────── EDIT MODAL (identical style to CreateCloth) ───────── */}
+      {/* ───────── EDIT MODAL ───────── */}
       <AnimatePresence>
         {editProduct && (
           <div style={modalStyles.overlay} onClick={closeEdit}>
@@ -962,12 +946,7 @@ const ViewClothes = () => {
                 <h3 style={{ margin: 0 }}>Edit Product</h3>
                 <button
                   onClick={closeEdit}
-                  style={{
-                    border: "none",
-                    background: "transparent",
-                    ...buttonBase,
-                    cursor: "pointer",
-                  }}
+                  style={{ border: "none", background: "transparent", ...buttonBase, cursor: "pointer" }}
                 >
                   <X />
                 </button>
@@ -978,9 +957,7 @@ const ViewClothes = () => {
                 <input
                   placeholder="Product Name *"
                   value={editForm.name}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, name: e.target.value })
-                  }
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                   style={modalStyles.input}
                   required
                 />
@@ -989,9 +966,7 @@ const ViewClothes = () => {
                 <textarea
                   placeholder="Product Description"
                   value={editForm.description}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, description: e.target.value })
-                  }
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                   style={modalStyles.textarea}
                 />
 
@@ -1000,9 +975,7 @@ const ViewClothes = () => {
                   type="number"
                   placeholder="Price *"
                   value={editForm.price}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, price: e.target.value })
-                  }
+                  onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
                   style={modalStyles.input}
                   required
                 />
@@ -1038,9 +1011,7 @@ const ViewClothes = () => {
                 {/* TYPE */}
                 <select
                   value={editForm.type}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, type: e.target.value })
-                  }
+                  onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}
                   style={modalStyles.input}
                 >
                   <option value="unstitched">Unstitched</option>
@@ -1109,12 +1080,16 @@ const ViewClothes = () => {
                             onError={(e) => { e.target.src = PLACEHOLDER; }}
                           />
                         )}
+                        {/* Label shows whether this slot is an existing image or new upload */}
+                        {file === null && editForm.galleryPreviews[i] ? (
+                          <p style={{ fontSize: 11, color: "#888", margin: "0 0 4px" }}>
+                            Existing — upload to replace
+                          </p>
+                        ) : null}
                         <input
                           type="file"
                           accept="image/*"
-                          onChange={(e) =>
-                            handleGalleryChange(e.target.files[0], i)
-                          }
+                          onChange={(e) => handleGalleryChange(e.target.files[0], i)}
                         />
                       </div>
                       <button
@@ -1132,9 +1107,7 @@ const ViewClothes = () => {
                 <input
                   placeholder="Meta Title *"
                   value={editForm.metaTitle}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, metaTitle: e.target.value })
-                  }
+                  onChange={(e) => setEditForm({ ...editForm, metaTitle: e.target.value })}
                   style={modalStyles.input}
                   required
                 />
@@ -1143,9 +1116,7 @@ const ViewClothes = () => {
                 <textarea
                   placeholder="Meta Description"
                   value={editForm.metaDescription}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, metaDescription: e.target.value })
-                  }
+                  onChange={(e) => setEditForm({ ...editForm, metaDescription: e.target.value })}
                   style={modalStyles.textarea}
                 />
 
@@ -1153,9 +1124,7 @@ const ViewClothes = () => {
                 <input
                   placeholder="Purchase Link (WhatsApp)"
                   value={editForm.purchasingLink}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, purchasingLink: e.target.value })
-                  }
+                  onChange={(e) => setEditForm({ ...editForm, purchasingLink: e.target.value })}
                   style={modalStyles.input}
                 />
 

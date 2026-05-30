@@ -61,7 +61,7 @@ const updateProduct = async (req, res) => {
 
     // 🔥 IMAGE HANDLING (IMPORTANT FIX)
     const mainImageFile = req.files?.mainImage?.[0]?.filename;
-    const galleryFiles = req.files?.imageGallery?.map(f => f.filename);
+    const galleryFiles = req.files?.imageGallery?.map((f) => f.filename);
 
     const BASE_URL = "https://izel-studio.onrender.com/uploads/products/";
 
@@ -70,17 +70,16 @@ const updateProduct = async (req, res) => {
     }
 
     if (galleryFiles && galleryFiles.length > 0) {
-      product.imageGallery = galleryFiles.map(img => BASE_URL + img);
+      product.imageGallery = galleryFiles.map((img) => BASE_URL + img);
     }
 
     const updatedProduct = await product.save();
 
-    return res.status(OK).json({
+    return res.status(200).json({
       success: true,
       message: "Product updated successfully!",
-      data: updatedProduct,
+      productId: updatedProduct._id,
     });
-
   } catch (err) {
     console.log(err);
 
