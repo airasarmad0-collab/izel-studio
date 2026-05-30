@@ -222,6 +222,8 @@ const ViewClothes = () => {
         }
       );
 
+      console.log(res)
+
       if (res.data.success) {
         toast.success("Product updated successfully!");
         closeEdit();
