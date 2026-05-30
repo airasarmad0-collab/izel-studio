@@ -3,10 +3,7 @@ const app = require("./src/app");
 const dbConnection = require("./src/config/db.connection");
 const express = require("express");
 const path = require("path")
-app.use(
-  "/uploads",
-  express.static(path.resolve(__dirname, "uploads"))
-);
+app.use("/uploads", express.static("/uploads"));
 const port = process.env.PORT || 5000;
 const server = http.createServer(app);
 

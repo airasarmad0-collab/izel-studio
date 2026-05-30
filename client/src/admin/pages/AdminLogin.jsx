@@ -29,7 +29,6 @@ const AdminLogin = () => {
     password: '',
   })
 
-  /* ── CHECK IF ALREADY LOGGED IN ── */
   useEffect(() => {
     const token = localStorage.getItem('adminToken')
 
@@ -38,7 +37,6 @@ const AdminLogin = () => {
     }
   }, [navigate])
 
-  /* ── INTRO ANIMATION ── */
   useEffect(() => {
     const tl = gsap.timeline()
 
@@ -88,7 +86,6 @@ const AdminLogin = () => {
     )
   }, [])
 
-  /* ── INPUT CHANGE ── */
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -96,7 +93,6 @@ const AdminLogin = () => {
     })
   }
 
-  /* ── LOGIN ── */
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -120,7 +116,6 @@ const AdminLogin = () => {
           )
         }
 
-        // ✅ save admin data
         if (data?.data) {
           localStorage.setItem(
             'admin',
@@ -133,7 +128,6 @@ const AdminLogin = () => {
           'true'
         )
 
-        // 🎬 exit animation + redirect
         gsap.to(cardRef.current, {
           opacity: 0,
           scale: 0.95,

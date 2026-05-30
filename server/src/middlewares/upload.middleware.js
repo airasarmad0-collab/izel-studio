@@ -3,11 +3,7 @@ const path = require("path");
 const fs = require("fs");
 
 // Folder setup
-const uploadPath = path.join(process.cwd(), "uploads/products");
-
-if (!fs.existsSync(uploadPath)) {
-  fs.mkdirSync(uploadPath, { recursive: true });
-}
+const uploadPath = path.join("/uploads", "products");
 
 // Storage engine
 const storage = multer.diskStorage({
