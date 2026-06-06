@@ -686,6 +686,7 @@ const QuickShopModal = React.memo(({ product, onClose, onNavigateDetail }) => {
                 variants={variants}
                 initial="enter"
                 animate="center"
+                loading="lazy"
                 exit="exit"
                 transition={{ duration: 0.28 }}
                 style={{

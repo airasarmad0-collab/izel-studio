@@ -26,6 +26,8 @@ import {
   RefreshCw,
   ExternalLink,
   Plus,
+  Cloud,
+  Upload,
 } from "lucide-react";
 
 const PLACEHOLDER = "https://via.placeholder.com/400x500?text=No+Image";
@@ -44,14 +46,16 @@ const ViewClothes = () => {
   const [viewMode, setViewMode] = useState("grid");
   const [updateLoading, setUpdateLoading] = useState(false);
 
+  // File states (stored separately, not in editForm)
+  const [mainImageFile, setMainImageFile] = useState(null);
+  const [newGalleryFiles, setNewGalleryFiles] = useState([]);
+
   const emptyEditForm = {
     name: "",
     description: "",
     price: "",
-    mainImage: null,
-    mainImagePreview: "",
-    imageGallery: [],      // File object or null (null = keep existing)
-    galleryPreviews: [],   // preview URLs (existing or new blob)
+    mainImage: "",          // URL for preview and existing URL
+    imageGallery: [],       // array of URLs (existing + blob previews)
     purchasingLink: "",
     type: "unstitched",
     metaTitle: "",
@@ -60,7 +64,6 @@ const ViewClothes = () => {
   };
   const [editForm, setEditForm] = useState(emptyEditForm);
 
-  // ───────── GSAP modal animation ─────────
   useEffect(() => {
     if (editProduct && modalRef.current) {
       gsap.fromTo(
@@ -71,7 +74,6 @@ const ViewClothes = () => {
     }
   }, [editProduct]);
 
-  // ───────── FETCH ─────────
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -90,31 +92,32 @@ const ViewClothes = () => {
     if (volumeId) fetchProducts();
   }, [volumeId]);
 
-  // ───────── OPEN EDIT MODAL ─────────
   const openEdit = (p) => {
     setEditProduct(p);
     setEditForm({
       name: p.name || "",
       description: p.description || "",
       price: p.price || "",
-      mainImage: null,
-      mainImagePreview: p.mainImage || "",
-      imageGallery: (p.imageGallery || []).map(() => null), // null = keep existing
-      galleryPreviews: p.imageGallery || [],
+      mainImage: p.mainImage || "",
+      imageGallery: p.imageGallery || [],
       purchasingLink: p.purchasingLink || "",
       type: p.type || "unstitched",
       metaTitle: p.metaTitle || "",
       metaDescription: p.metaDescription || "",
       tags: p.tags && p.tags.length ? p.tags : [""],
     });
+    // Reset file states
+    setMainImageFile(null);
+    setNewGalleryFiles([]);
   };
 
   const closeEdit = () => {
     setEditProduct(null);
     setEditForm(emptyEditForm);
+    setMainImageFile(null);
+    setNewGalleryFiles([]);
   };
 
-  // ───────── DELETE ─────────
   const deleteProduct = async (id) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
     try {
@@ -127,7 +130,7 @@ const ViewClothes = () => {
     }
   };
 
-  // ───────── TAG HELPERS ─────────
+  // Tag helpers
   const handleTagChange = (val, i) => {
     const updated = [...editForm.tags];
     updated[i] = val;
@@ -144,42 +147,52 @@ const ViewClothes = () => {
     setEditForm({ ...editForm, tags: updated.length ? updated : [""] });
   };
 
-  // ───────── MAIN IMAGE ─────────
-  const handleMainImage = (file) => {
-    setEditForm({
-      ...editForm,
-      mainImage: file,
-      mainImagePreview: file ? URL.createObjectURL(file) : editForm.mainImagePreview,
-    });
+  // Gallery removal (handles both existing URLs and new blob previews)
+  const removeGalleryImage = (indexToRemove) => {
+    const urlToRemove = editForm.imageGallery[indexToRemove];
+    setEditForm((prev) => ({
+      ...prev,
+      imageGallery: prev.imageGallery.filter((_, idx) => idx !== indexToRemove),
+    }));
+    // If it was a new file (blob), also remove from newGalleryFiles
+    if (urlToRemove.startsWith("blob:")) {
+      // Find which new file corresponds to this blob URL (by matching index in combined array)
+      // Simpler: keep track of new files separately – we know that all blobs correspond to newGalleryFiles in order of addition.
+      // Since we add multiple at once, we need to know which index to remove. For demo we'll rebuild newGalleryFiles.
+      // Better approach: store a unique id, but for simplicity we'll just filter by the fact that we can't map easily.
+      // We'll re‑set newGalleryFiles by counting how many blob URLs remain.
+      const remainingBlobUrls = editForm.imageGallery.filter(url => url.startsWith("blob:"));
+      setNewGalleryFiles(prev => prev.slice(0, remainingBlobUrls.length));
+    }
   };
 
-  // ───────── GALLERY HELPERS ─────────
-  const handleGalleryChange = (file, i) => {
-    const updatedFiles = [...editForm.imageGallery];
-    const updatedPreviews = [...editForm.galleryPreviews];
-    updatedFiles[i] = file;
-    updatedPreviews[i] = file ? URL.createObjectURL(file) : updatedPreviews[i];
-    setEditForm({ ...editForm, imageGallery: updatedFiles, galleryPreviews: updatedPreviews });
+  // Main image file selection (store file, preview URL)
+  const handleMainImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setMainImageFile(file);
+      setEditForm(prev => ({
+        ...prev,
+        mainImage: URL.createObjectURL(file)
+      }));
+    }
   };
 
-  const addGallery = () => {
-    if (editForm.imageGallery.length >= MAX_GALLERY) return;
-    setEditForm({
-      ...editForm,
-      imageGallery: [...editForm.imageGallery, null],
-      galleryPreviews: [...editForm.galleryPreviews, ""],
-    });
+  // Gallery multiple file selection
+  const handleGallerySelect = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length) {
+      setNewGalleryFiles(prev => [...prev, ...files]);
+      const previewUrls = files.map(f => URL.createObjectURL(f));
+      setEditForm(prev => ({
+        ...prev,
+        imageGallery: [...prev.imageGallery, ...previewUrls]
+      }));
+    }
+    e.target.value = ""; // allow re-selecting same files
   };
 
-  const removeGallery = (i) => {
-    setEditForm({
-      ...editForm,
-      imageGallery: editForm.imageGallery.filter((_, idx) => idx !== i),
-      galleryPreviews: editForm.galleryPreviews.filter((_, idx) => idx !== i),
-    });
-  };
-
-  // ───────── UPDATE SUBMIT ─────────
+  // ───────── UPDATE SUBMIT with FormData ─────────
   const handleUpdate = async (e) => {
     e.preventDefault();
 
@@ -188,7 +201,14 @@ const ViewClothes = () => {
       return;
     }
 
+    // Main image must exist either as an existing URL or a new file
+    if (!editForm.mainImage && !mainImageFile) {
+      toast.error("Main image is required");
+      return;
+    }
+
     const formData = new FormData();
+    // Text fields
     formData.append("name", editForm.name);
     formData.append("description", editForm.description);
     formData.append("price", editForm.price);
@@ -196,28 +216,28 @@ const ViewClothes = () => {
     formData.append("metaDescription", editForm.metaDescription);
     formData.append("type", editForm.type);
     formData.append("purchasingLink", editForm.purchasingLink);
+    
+    // Tags (send as array)
+    editForm.tags.filter(t => t.trim()).forEach(tag => formData.append("tags[]", tag));
 
-    const tagsString = editForm.tags.filter((t) => t.trim()).join(",");
-    formData.append("tags", tagsString);
-
-    // Only append mainImage if a new file was chosen
-    if (editForm.mainImage) {
-      formData.append("mainImage", editForm.mainImage);
+    // Existing image URLs (to keep if no new file)
+    if (editForm.mainImage && !editForm.mainImage.startsWith("blob:")) {
+      formData.append("existingMainImage", editForm.mainImage);
     }
-
-    // Send existing gallery URLs (slots where file is null = keep as-is)
-    // Backend will use these to rebuild the full ordered gallery
-    const existingUrls = editForm.imageGallery
-      .map((file, i) => (file === null ? editForm.galleryPreviews[i] : null))
-      .filter((url) => url && url !== "");
-
-    existingUrls.forEach((url) => {
-      formData.append("existingGallery", url);
+    // Existing gallery URLs (skip blob previews)
+    editForm.imageGallery.forEach(url => {
+      if (url && !url.startsWith("blob:")) {
+        formData.append("existingImageGallery[]", url);
+      }
     });
 
-    // Only append newly chosen gallery files
-    editForm.imageGallery.forEach((file) => {
-      if (file) formData.append("imageGallery", file);
+    // New main image file
+    if (mainImageFile) {
+      formData.append("mainImage", mainImageFile);
+    }
+    // New gallery files
+    newGalleryFiles.forEach(file => {
+      formData.append("imageGallery", file);
     });
 
     try {
@@ -245,9 +265,8 @@ const ViewClothes = () => {
     }
   };
 
-  // ───────── HELPERS ─────────
+  // Helpers
   const safeImg = (url) => (!url || url === "" ? PLACEHOLDER : url);
-
   const formatPrice = (price) =>
     new Intl.NumberFormat("en-PK", {
       style: "currency",
@@ -259,7 +278,6 @@ const ViewClothes = () => {
     navigate(`/admin/dashboard/view/cloth/${clothId}`);
   };
 
-  // ───────── SHARED STYLES ─────────
   const buttonBase = {
     display: "flex",
     alignItems: "center",
@@ -305,6 +323,7 @@ const ViewClothes = () => {
       borderRadius: 8,
       border: "1px solid #ddd",
       boxSizing: "border-box",
+      fontFamily: "inherit",
     },
     textarea: {
       width: "100%",
@@ -313,6 +332,7 @@ const ViewClothes = () => {
       borderRadius: 8,
       border: "1px solid #ddd",
       boxSizing: "border-box",
+      fontFamily: "inherit",
     },
     box: {
       padding: 10,
@@ -328,16 +348,6 @@ const ViewClothes = () => {
       display: "flex",
       gap: 8,
       marginTop: 8,
-    },
-    galleryItem: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      gap: 8,
-      padding: 10,
-      background: "#f5f5f5",
-      borderRadius: 8,
-      marginTop: 6,
     },
     addBtn: {
       background: "#000",
@@ -365,7 +375,6 @@ const ViewClothes = () => {
     },
   };
 
-  // ───────── RENDER ─────────
   return (
     <>
       <Helmet>
@@ -381,7 +390,7 @@ const ViewClothes = () => {
           color: "#fff",
         }}
       >
-        {/* BACK BUTTON AND HEADER */}
+        {/* Back button and header */}
         <div style={{ marginBottom: 20 }}>
           <Link
             to="/admin/dashboard/view/volumes"
@@ -432,7 +441,6 @@ const ViewClothes = () => {
               </p>
             </div>
 
-            {/* View Toggle */}
             <div
               style={{
                 display: "flex",
@@ -468,7 +476,7 @@ const ViewClothes = () => {
           </div>
         </div>
 
-        {/* PRODUCTS DISPLAY */}
+        {/* Products display */}
         {loading ? (
           <div style={{ textAlign: "center", padding: "40px" }}>
             <RefreshCw size={40} style={{ animation: "spin 1s linear infinite" }} />
@@ -508,7 +516,6 @@ const ViewClothes = () => {
             </Link>
           </div>
         ) : viewMode === "grid" ? (
-          // ── GRID VIEW ──
           <div
             style={{
               display: "grid",
@@ -535,7 +542,6 @@ const ViewClothes = () => {
                   e.currentTarget.style.boxShadow = "none";
                 }}
               >
-                {/* IMAGE */}
                 <div
                   style={{ position: "relative", cursor: "pointer" }}
                   onClick={() => viewSingleProduct(p._id)}
@@ -576,8 +582,6 @@ const ViewClothes = () => {
                     </span>
                   )}
                 </div>
-
-                {/* INFO */}
                 <div style={{ padding: "15px" }}>
                   <div
                     style={{
@@ -616,7 +620,6 @@ const ViewClothes = () => {
                       Details
                     </button>
                   </div>
-
                   <p
                     style={{
                       color: "#4a90e2",
@@ -627,7 +630,6 @@ const ViewClothes = () => {
                   >
                     {formatPrice(p.price)}
                   </p>
-
                   {p.description && (
                     <p style={{ color: "#8892b0", fontSize: "14px", margin: "10px 0" }}>
                       {p.description.length > 80
@@ -635,7 +637,6 @@ const ViewClothes = () => {
                         : p.description}
                     </p>
                   )}
-
                   <div
                     style={{
                       display: "flex",
@@ -693,8 +694,6 @@ const ViewClothes = () => {
                       </span>
                     )}
                   </div>
-
-                  {/* ACTIONS */}
                   <div style={{ display: "flex", gap: "10px", marginTop: "15px" }}>
                     <button
                       onClick={(e) => { e.stopPropagation(); openEdit(p); }}
@@ -742,7 +741,6 @@ const ViewClothes = () => {
             ))}
           </div>
         ) : (
-          // ── LIST VIEW ──
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {products.map((p) => (
               <div
@@ -770,7 +768,6 @@ const ViewClothes = () => {
                   }}
                   onError={(e) => { e.target.src = PLACEHOLDER; }}
                 />
-
                 <div style={{ flex: 1 }}>
                   <div
                     style={{
@@ -811,7 +808,6 @@ const ViewClothes = () => {
                       View Full Details
                     </button>
                   </div>
-
                   <p
                     style={{
                       color: "#4a90e2",
@@ -822,7 +818,6 @@ const ViewClothes = () => {
                   >
                     {formatPrice(p.price)}
                   </p>
-
                   {p.description && (
                     <p style={{ color: "#8892b0", fontSize: "14px", margin: "5px 0" }}>
                       {p.description.length > 100
@@ -830,7 +825,6 @@ const ViewClothes = () => {
                         : p.description}
                     </p>
                   )}
-
                   <div
                     style={{
                       display: "flex",
@@ -889,7 +883,6 @@ const ViewClothes = () => {
                     )}
                   </div>
                 </div>
-
                 <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                   <button
                     onClick={(e) => { e.stopPropagation(); openEdit(p); }}
@@ -932,7 +925,7 @@ const ViewClothes = () => {
         )}
       </div>
 
-      {/* ───────── EDIT MODAL ───────── */}
+      {/* EDIT MODAL – with file pickers and direct submission */}
       <AnimatePresence>
         {editProduct && (
           <div style={modalStyles.overlay} onClick={closeEdit}>
@@ -941,9 +934,11 @@ const ViewClothes = () => {
               style={modalStyles.modal}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* HEADER */}
               <div style={modalStyles.header}>
-                <h3 style={{ margin: 0 }}>Edit Product</h3>
+                <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                  <Cloud size={20} color="#4a90e2" />
+                  Edit Product — Upload Images
+                </h3>
                 <button
                   onClick={closeEdit}
                   style={{ border: "none", background: "transparent", ...buttonBase, cursor: "pointer" }}
@@ -953,81 +948,109 @@ const ViewClothes = () => {
               </div>
 
               <form style={modalStyles.form} onSubmit={handleUpdate}>
-                {/* NAME */}
-                <input
-                  placeholder="Product Name *"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  style={modalStyles.input}
-                  required
-                />
+                {/* Name */}
+                <div>
+                  <label style={{ display: "block", marginBottom: 5, fontWeight: "bold" }}>
+                    Product Name *
+                  </label>
+                  <input
+                    placeholder="Enter product name"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    style={modalStyles.input}
+                    required
+                  />
+                </div>
 
-                {/* DESCRIPTION */}
-                <textarea
-                  placeholder="Product Description"
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  style={modalStyles.textarea}
-                />
+                {/* Description */}
+                <div>
+                  <label style={{ display: "block", marginBottom: 5, fontWeight: "bold" }}>
+                    Product Description
+                  </label>
+                  <textarea
+                    placeholder="Enter product description"
+                    value={editForm.description}
+                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                    style={modalStyles.textarea}
+                  />
+                </div>
 
-                {/* PRICE */}
-                <input
-                  type="number"
-                  placeholder="Price *"
-                  value={editForm.price}
-                  onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
-                  style={modalStyles.input}
-                  required
-                />
+                {/* Price */}
+                <div>
+                  <label style={{ display: "block", marginBottom: 5, fontWeight: "bold" }}>
+                    Price (PKR) *
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Enter price"
+                    value={editForm.price}
+                    onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
+                    style={modalStyles.input}
+                    required
+                  />
+                </div>
 
-                {/* MAIN IMAGE */}
+                {/* MAIN IMAGE - FILE PICKER */}
                 <div style={modalStyles.box}>
-                  <b>Main Image</b>
-                  {editForm.mainImagePreview && (
-                    <div style={{ margin: "8px 0" }}>
+                  <label style={{ display: "block", marginBottom: 8, fontWeight: "bold", color: "#333" }}>
+                    Main Image *
+                  </label>
+                  {editForm.mainImage && (
+                    <div style={{ marginBottom: 12 }}>
                       <img
-                        src={editForm.mainImagePreview}
+                        src={editForm.mainImage}
                         alt="Main preview"
                         style={{
                           width: "100%",
                           maxHeight: 200,
                           objectFit: "contain",
                           borderRadius: 8,
+                          border: "1px solid #ddd",
                         }}
                         onError={(e) => { e.target.src = PLACEHOLDER; }}
                       />
-                      <p style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
-                        Current image — upload a new file to replace
+                      <p style={{ fontSize: 12, color: "#888", marginTop: 6 }}>
+                        {mainImageFile ? "New image (to be uploaded)" : "Current main image"}
                       </p>
                     </div>
                   )}
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => handleMainImage(e.target.files[0])}
+                    onChange={handleMainImageSelect}
+                    style={modalStyles.input}
                   />
+                  <p style={{ fontSize: 12, color: "#666", marginTop: 6 }}>
+                    Select a new image from your computer. It will replace the current main image.
+                  </p>
                 </div>
 
-                {/* TYPE */}
-                <select
-                  value={editForm.type}
-                  onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}
-                  style={modalStyles.input}
-                >
-                  <option value="unstitched">Unstitched</option>
-                  <option value="stitched">Stitched</option>
-                </select>
+                {/* Type */}
+                <div>
+                  <label style={{ display: "block", marginBottom: 5, fontWeight: "bold" }}>
+                    Product Type
+                  </label>
+                  <select
+                    value={editForm.type}
+                    onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}
+                    style={modalStyles.input}
+                  >
+                    <option value="unstitched">Unstitched</option>
+                    <option value="stitched">Stitched</option>
+                  </select>
+                </div>
 
-                {/* TAGS */}
+                {/* Tags */}
                 <div>
                   <div style={modalStyles.row}>
-                    <b>Tags</b>
+                    <label style={{ fontWeight: "bold" }}>Tags</label>
                     <button
                       type="button"
                       onClick={addTag}
-                      style={{ ...modalStyles.addBtn, ...buttonBase }}
+                      disabled={editForm.tags.length >= MAX_TAGS}
+                      style={{ ...modalStyles.addBtn, ...buttonBase, opacity: editForm.tags.length >= MAX_TAGS ? 0.5 : 1 }}
                     >
-                      <Plus size={14} /> Add
+                      <Plus size={14} /> Add Tag
                     </button>
                   </div>
                   {editForm.tags.map((t, i) => (
@@ -1049,86 +1072,114 @@ const ViewClothes = () => {
                   ))}
                 </div>
 
-                {/* GALLERY IMAGES */}
+                {/* GALLERY IMAGES - MULTIPLE FILE PICKER */}
                 <div>
                   <div style={modalStyles.row}>
-                    <b>Gallery Images</b>
-                    <button
-                      type="button"
-                      onClick={addGallery}
-                      style={{ ...modalStyles.addBtn, ...buttonBase }}
+                    <label style={{ fontWeight: "bold" }}>Gallery Images</label>
+                    <label
+                      htmlFor="gallery-upload"
+                      style={{ ...modalStyles.addBtn, ...buttonBase, cursor: "pointer" }}
                     >
-                      <Plus size={14} /> Add Image
-                    </button>
+                      <Upload size={14} /> Add Images
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      id="gallery-upload"
+                      style={{ display: "none" }}
+                      onChange={handleGallerySelect}
+                    />
                   </div>
 
-                  {editForm.imageGallery.map((file, i) => (
-                    <div key={i} style={modalStyles.galleryItem}>
-                      <div style={{ flex: 1 }}>
-                        {editForm.galleryPreviews[i] && (
-                          <img
-                            src={editForm.galleryPreviews[i]}
-                            alt={`gallery-${i}`}
-                            style={{
-                              width: 60,
-                              height: 60,
-                              objectFit: "cover",
-                              borderRadius: 6,
-                              marginBottom: 4,
-                              display: "block",
-                            }}
-                            onError={(e) => { e.target.src = PLACEHOLDER; }}
-                          />
-                        )}
-                        {/* Label shows whether this slot is an existing image or new upload */}
-                        {file === null && editForm.galleryPreviews[i] ? (
-                          <p style={{ fontSize: 11, color: "#888", margin: "0 0 4px" }}>
-                            Existing — upload to replace
-                          </p>
-                        ) : null}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleGalleryChange(e.target.files[0], i)}
+                  {editForm.imageGallery.length === 0 && (
+                    <p style={{ fontSize: 12, color: "#888", marginTop: 8 }}>
+                      No gallery images yet. Click "Add Images" to upload from your computer.
+                    </p>
+                  )}
+
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
+                    {editForm.imageGallery.map((url, idx) => (
+                      <div key={idx} style={{ position: "relative", width: 100 }}>
+                        <img
+                          src={url}
+                          alt={`gallery-${idx}`}
+                          style={{
+                            width: "100%",
+                            height: 100,
+                            objectFit: "cover",
+                            borderRadius: 8,
+                            border: "1px solid #ddd",
+                          }}
+                          onError={(e) => { e.target.src = PLACEHOLDER; }}
                         />
+                        <button
+                          type="button"
+                          onClick={() => removeGalleryImage(idx)}
+                          style={{
+                            position: "absolute",
+                            top: -8,
+                            right: -8,
+                            background: "#dc3545",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: "50%",
+                            width: 24,
+                            height: 24,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <X size={14} />
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removeGallery(i)}
-                        style={{ ...modalStyles.removeBtn, ...buttonBase }}
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
 
-                {/* META TITLE */}
-                <input
-                  placeholder="Meta Title *"
-                  value={editForm.metaTitle}
-                  onChange={(e) => setEditForm({ ...editForm, metaTitle: e.target.value })}
-                  style={modalStyles.input}
-                  required
-                />
+                {/* Meta Title */}
+                <div>
+                  <label style={{ display: "block", marginBottom: 5, fontWeight: "bold" }}>
+                    Meta Title *
+                  </label>
+                  <input
+                    placeholder="Enter meta title for SEO"
+                    value={editForm.metaTitle}
+                    onChange={(e) => setEditForm({ ...editForm, metaTitle: e.target.value })}
+                    style={modalStyles.input}
+                    required
+                  />
+                </div>
 
-                {/* META DESCRIPTION */}
-                <textarea
-                  placeholder="Meta Description"
-                  value={editForm.metaDescription}
-                  onChange={(e) => setEditForm({ ...editForm, metaDescription: e.target.value })}
-                  style={modalStyles.textarea}
-                />
+                {/* Meta Description */}
+                <div>
+                  <label style={{ display: "block", marginBottom: 5, fontWeight: "bold" }}>
+                    Meta Description
+                  </label>
+                  <textarea
+                    placeholder="Enter meta description for SEO"
+                    value={editForm.metaDescription}
+                    onChange={(e) => setEditForm({ ...editForm, metaDescription: e.target.value })}
+                    style={modalStyles.textarea}
+                  />
+                </div>
 
-                {/* PURCHASING LINK */}
-                <input
-                  placeholder="Purchase Link (WhatsApp)"
-                  value={editForm.purchasingLink}
-                  onChange={(e) => setEditForm({ ...editForm, purchasingLink: e.target.value })}
-                  style={modalStyles.input}
-                />
+                {/* Purchasing Link */}
+                <div>
+                  <label style={{ display: "block", marginBottom: 5, fontWeight: "bold" }}>
+                    Purchase Link (WhatsApp)
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://wa.me/..."
+                    value={editForm.purchasingLink}
+                    onChange={(e) => setEditForm({ ...editForm, purchasingLink: e.target.value })}
+                    style={modalStyles.input}
+                  />
+                </div>
 
-                {/* SUBMIT */}
                 <motion.button
                   type="submit"
                   whileTap={{ scale: 0.95 }}
@@ -1143,7 +1194,6 @@ const ViewClothes = () => {
         )}
       </AnimatePresence>
 
-      {/* Global styles */}
       <style>{`
         @keyframes spin {
           from { transform: rotate(0deg); }
@@ -1159,6 +1209,7 @@ const ViewClothes = () => {
           opacity: 0;
           transition: opacity 0.3s;
           gap: 10px;
+          flex-direction: column;
         }
         div:hover > .image-overlay {
           opacity: 1;

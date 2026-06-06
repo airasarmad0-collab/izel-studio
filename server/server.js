@@ -4,10 +4,10 @@ const dbConnection = require("./src/config/db.connection");
 const express = require("express");
 const path = require("path")
 
-app.use(
-  "/uploads",
-  express.static(path.join(process.cwd(), "uploads"))
-);
+// app.use(
+//   "/uploads",
+//   express.static(path.join(process.cwd(), "uploads"))
+// );
 
 const port = process.env.PORT || 5000;
 const server = http.createServer(app);

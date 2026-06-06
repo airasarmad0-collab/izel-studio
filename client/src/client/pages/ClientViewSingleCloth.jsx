@@ -685,6 +685,7 @@ const ImageSlider = ({ images, onImageClick }) => {
             variants={variants}
             initial="enter"
             animate="center"
+            loading="lazy"
             exit="exit"
             transition={{ duration: 0.26, ease: "easeInOut" }}
             style={{
@@ -741,6 +742,7 @@ const ImageSlider = ({ images, onImageClick }) => {
             <img
               key={i}
               src={img}
+              loading="lazy"
               className={`sg-thumb ${i === idx ? "active" : ""}`}
               onClick={() => goTo(i)}
               alt={`thumb-${i}`}
@@ -772,6 +774,7 @@ console.log(imageUrl);
       <div className="sg-related-img-wrap">
         <img
           src={imageUrl}
+          loading="lazy"
           className="sg-related-img"
           alt={product.name}
           onError={(e) => (e.target.src = "https://via.placeholder.com/200x300?text=No+Image")}

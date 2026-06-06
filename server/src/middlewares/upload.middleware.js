@@ -1,53 +1,19 @@
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("../config/cloudinary");
 
-// Folder setup (Render disk)
-const uploadPath = path.join(process.cwd(), "uploads", "products");
-
-// 🔥 IMPORTANT: ensure folder exists
-if (!fs.existsSync(uploadPath)) {
-  fs.mkdirSync(uploadPath, { recursive: true });
-}
-
-// Storage engine
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadPath);
-  },
-
-  filename: (req, file, cb) => {
-    const uniqueName =
-      Date.now() +
-      "-" +
-      Math.round(Math.random() * 1e9) +
-      path.extname(file.originalname);
-
-    cb(null, uniqueName);
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "izel-studio/products",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
   },
 });
 
-// File filter
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = [
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-    "image/jpg",
-  ];
-
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Only image files are allowed"), false);
-  }
-};
-
 const upload = multer({
   storage,
-  fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024,
+    fileSize: 5 * 1024 * 1024, // 5MB limit
   },
 });
 

@@ -18,16 +18,25 @@ const createProduct = async (req, res) => {
     } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(volumeId)) {
-      return res.status(BAD_REQUEST).json({ success: false, message: "Invalid Volume ID!" });
+      return res.status(BAD_REQUEST).json({
+        success: false,
+        message: "Invalid Volume ID!",
+      });
     }
 
     const volume = await VolumeModel.findById(volumeId);
     if (!volume) {
-      return res.status(BAD_REQUEST).json({ success: false, message: "Volume not found!" });
+      return res.status(BAD_REQUEST).json({
+        success: false,
+        message: "Volume not found!",
+      });
     }
 
-    const mainImage = req.files?.mainImage?.[0]?.filename || null;
-    const gallery = req.files?.imageGallery?.map(f => f.filename) || [];
+    // ✅ CLOUDINARY FIX
+    const mainImage = req.files?.mainImage?.[0]?.path || null;
+
+    const gallery =
+      req.files?.imageGallery?.map((file) => file.path) || [];
 
     if (!name || !price || !mainImage || !metaTitle) {
       return res.status(BAD_REQUEST).json({
@@ -45,8 +54,10 @@ const createProduct = async (req, res) => {
       metaTitle,
       metaDescription,
       volume: volumeId,
-      mainImage: `https://izel-studio.onrender.com/uploads/products/${mainImage}`,
-      imageGallery: gallery.map(img => `https://izel-studio.onrender.com/uploads/products/${img}`),
+
+      // ✅ Cloudinary URLs (NO LOCAL DISK)
+      mainImage: mainImage,
+      imageGallery: gallery,
     });
 
     return res.status(OK).json({
@@ -54,6 +65,7 @@ const createProduct = async (req, res) => {
       message: "Product created successfully!",
       data: product,
     });
+
   } catch (err) {
     console.log(err);
     return res.status(SERVER_ERROR).json({

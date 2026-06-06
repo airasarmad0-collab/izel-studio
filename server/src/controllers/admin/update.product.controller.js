@@ -1,12 +1,58 @@
 const mongoose = require("mongoose");
+const multer = require("multer");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("../../config/cloudinary"); // adjust path to your cloudinary.js
 const ProductModel = require("../../models/client/product.schema");
 const VolumeModel = require("../../models/client/volume.schema");
 const { OK, BAD_REQUEST, SERVER_ERROR } = require("../../config/get.codes");
 
+// ─────────────────────────────────────────────────────────────────
+// 1. Configure multer with Cloudinary storage (same as your existing upload.js)
+// ─────────────────────────────────────────────────────────────────
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "izel-studio/products",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+});
+
+// This multer middleware handles fields:
+//   - mainImage (single)
+//   - imageGallery (multiple, up to 9)
+const uploadProductFiles = upload.fields([
+  { name: "mainImage", maxCount: 1 },
+  { name: "imageGallery", maxCount: 9 },
+]);
+
+// ─────────────────────────────────────────────────────────────────
+// 2. Helper to run multer middleware inside the controller
+// ─────────────────────────────────────────────────────────────────
+const runMiddleware = (req, res, fn) => {
+  return new Promise((resolve, reject) => {
+    fn(req, res, (result) => {
+      if (result instanceof Error) return reject(result);
+      return resolve(result);
+    });
+  });
+};
+
+// ─────────────────────────────────────────────────────────────────
+// 3. Main update controller
+// ─────────────────────────────────────────────────────────────────
 const updateProduct = async (req, res) => {
   try {
+    // Run multer file parsing first
+    await runMiddleware(req, res, uploadProductFiles);
+
     const { productId } = req.params;
 
+    // Text fields from body
     const {
       name,
       description,
@@ -17,8 +63,15 @@ const updateProduct = async (req, res) => {
       volume,
       metaTitle,
       metaDescription,
-    } = req.body || {};
+      existingMainImage,      // sent from frontend to keep old URL if no new file
+      existingImageGallery,   // array of existing gallery URLs (as JSON string or array)
+    } = req.body;
 
+    // Uploaded files
+    const uploadedMain = req.files?.mainImage?.[0];
+    const uploadedGallery = req.files?.imageGallery || [];
+
+    // Validate productId
     if (!mongoose.Types.ObjectId.isValid(productId)) {
       return res.status(BAD_REQUEST).json({
         success: false,
@@ -27,7 +80,6 @@ const updateProduct = async (req, res) => {
     }
 
     const product = await ProductModel.findById(productId);
-
     if (!product) {
       return res.status(BAD_REQUEST).json({
         success: false,
@@ -35,71 +87,106 @@ const updateProduct = async (req, res) => {
       });
     }
 
-    // Check volume
-    if (volume) {
-      const volumeExists = await VolumeModel.findById(volume);
+    // Required fields
+    if (!name || !price || !metaTitle) {
+      return res.status(BAD_REQUEST).json({
+        success: false,
+        message: "Please provide name, price, and metaTitle",
+      });
+    }
 
+    // ─── Main Image Logic ─────────────────────────────────────
+    let mainImageUrl = product.mainImage;
+    if (uploadedMain) {
+      // New file uploaded → use Cloudinary URL
+      mainImageUrl = uploadedMain.path;
+    } else if (existingMainImage) {
+      // No new file, keep existing (sent from frontend)
+      mainImageUrl = existingMainImage;
+    }
+    if (!mainImageUrl) {
+      return res.status(BAD_REQUEST).json({
+        success: false,
+        message: "Main image is required",
+      });
+    }
+
+    // ─── Gallery Images Logic ─────────────────────────────────
+    let galleryUrls = [];
+
+    // Parse existing gallery (sent as JSON string or array)
+    if (existingImageGallery) {
+      try {
+        galleryUrls = Array.isArray(existingImageGallery)
+          ? existingImageGallery
+          : JSON.parse(existingImageGallery);
+      } catch (e) {
+        galleryUrls = [];
+      }
+    } else if (product.imageGallery && product.imageGallery.length) {
+      galleryUrls = [...product.imageGallery];
+    }
+
+    // Append new uploaded gallery images
+    for (const file of uploadedGallery) {
+      galleryUrls.push(file.path);
+    }
+
+    // Remove duplicates and empty strings
+    galleryUrls = [...new Set(galleryUrls)].filter(url => url && url.trim());
+
+    // ─── Volume check (if changed) ────────────────────────────
+    if (volume && volume !== product.volume?.toString()) {
+      const volumeExists = await VolumeModel.findById(volume);
       if (!volumeExists) {
         return res.status(BAD_REQUEST).json({
           success: false,
           message: "Volume not found!",
         });
       }
-
       product.volume = volume;
     }
 
-    // Text fields update
-    if (name) product.name = name;
-    if (description) product.description = description;
-    if (tags) product.tags = tags;
-    if (price !== undefined) product.price = price;
-    if (purchasingLink) product.purchasingLink = purchasingLink;
-    if (type) product.type = type;
-    if (metaTitle) product.metaTitle = metaTitle;
-    if (metaDescription) product.metaDescription = metaDescription;
-
-    // 🔥 IMAGE HANDLING (IMPORTANT FIX)
-    const mainImageFile = req.files?.mainImage?.[0]?.filename;
-    const galleryFiles = req.files?.imageGallery?.map((f) => f.filename);
-
-    const BASE_URL = "https://izel-studio.onrender.com/uploads/products/";
-
-    if (mainImageFile) {
-      product.mainImage = BASE_URL + mainImageFile;
+    // ─── Update text fields ───────────────────────────────────
+    product.name = name;
+    if (description !== undefined) product.description = description;
+    if (tags && Array.isArray(tags)) {
+      product.tags = tags.filter(tag => tag && tag.trim());
     }
+    product.price = price;
+    if (purchasingLink !== undefined) product.purchasingLink = purchasingLink;
+    if (type !== undefined) product.type = type;
+    if (metaTitle !== undefined) product.metaTitle = metaTitle;
+    if (metaDescription !== undefined) product.metaDescription = metaDescription;
 
-    if (galleryFiles && galleryFiles.length > 0) {
-      product.imageGallery = galleryFiles.map((img) => BASE_URL + img);
-    }
+    // Update images
+    product.mainImage = mainImageUrl;
+    product.imageGallery = galleryUrls;
 
     const updatedProduct = await product.save();
 
-    return res.status(200).json({
+    return res.status(OK).json({
       success: true,
       message: "Product updated successfully!",
-      productId: updatedProduct._id,
+      data: updatedProduct,
     });
-  } catch (err) {
-    console.log(err);
 
+  } catch (err) {
+    console.error(err);
     if (err.code === 11000) {
       return res.status(BAD_REQUEST).json({
         success: false,
         message: "Product name already exists!",
       });
     }
-
     if (err.name === "ValidationError") {
-      const errors = Object.values(err.errors).map((e) => e.message);
-
+      const errors = Object.values(err.errors).map(e => e.message);
       return res.status(BAD_REQUEST).json({
         success: false,
         message: errors[0],
         errors,
       });
     }
-
     return res.status(SERVER_ERROR).json({
       success: false,
       message: "Server error!",
