@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const apiBase = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: import.meta.env.VITE_API_URL || "https://izel-studio-production.up.railway.app",
   headers: { "Content-Type": "application/json" },
   withCredentials: true
 });
