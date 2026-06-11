@@ -1,12 +1,12 @@
 import axios from "axios";
 
 const apiBase = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://izel-studio-production.up.railway.app",
+  baseURL: "https://izel-studio-production.up.railway.app",
   headers: { "Content-Type": "application/json" },
   withCredentials: true
 });
 
-console.log(import.meta.env.VITE_API_URL);
+console.log("https://izel-studio-production.up.railway.app");
 
 // ✅ Request interceptor – attach token
 apiBase.interceptors.request.use(
