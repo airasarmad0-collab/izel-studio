@@ -29,12 +29,10 @@ const deleteVolume = async (req, res) => {
       });
     }
 
-    // ✅ Delete all products of this volume
     await ProductModel.deleteMany({
       volume: volumeId,
     });
 
-    // ✅ Delete volume
     await VolumeModel.findByIdAndDelete(volumeId);
 
     return res.status(OK).json({
