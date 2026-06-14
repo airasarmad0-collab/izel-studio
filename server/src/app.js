@@ -15,7 +15,7 @@ app.use(cors({
   ],
   credentials: true
 }));
-app.set('trust proxy', 1); // 👈 IMPORTANT FIX FOR RENDER
+app.set('trust proxy', 1); 
 
 app.use(morgan("dev"));
 app.use(express.json({ limit: "2mb" }));

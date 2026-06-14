@@ -1,4 +1,5 @@
 const VolumeModel = require("../../models/client/volume.schema");
+const ProductModel = require("../../models/client/product.schema");
 const { SERVER_ERROR, BAD_REQUEST, OK } = require("../../config/get.codes");
 const mongoose = require("mongoose");
 
@@ -6,6 +7,7 @@ const deleteVolume = async (req, res) => {
   try {
     const { volumeId } = req.params;
 
+    // Validate MongoDB ID
     if (!mongoose.Types.ObjectId.isValid(volumeId)) {
       return res.status(BAD_REQUEST).json({
         success: false,
@@ -15,6 +17,7 @@ const deleteVolume = async (req, res) => {
       });
     }
 
+    // Check volume exists
     const volume = await VolumeModel.findById(volumeId);
 
     if (!volume) {
@@ -26,13 +29,19 @@ const deleteVolume = async (req, res) => {
       });
     }
 
+    // ✅ Delete all products of this volume
+    await ProductModel.deleteMany({
+      volume: volumeId,
+    });
+
+    // ✅ Delete volume
     await VolumeModel.findByIdAndDelete(volumeId);
 
     return res.status(OK).json({
       success: true,
-      message: "Volume deleted successfully!",
+      message: "Volume and related products deleted successfully!",
       data: volume,
-      status: OK
+      status: OK,
     });
 
   } catch (err) {
