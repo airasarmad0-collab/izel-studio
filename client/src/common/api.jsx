@@ -1,12 +1,12 @@
 import axios from "axios";
 
 const apiBase = axios.create({
-  baseURL: "https://izel-studio-production.up.railway.app",
+  baseURL: "https://izelstudio.onrender.com",
   headers: { "Content-Type": "application/json" },
   withCredentials: true
 });
 
-console.log("https://izel-studio-production.up.railway.app");
+console.log("https://izelstudio.onrender.com");
 
 // ✅ Request interceptor – attach token
 apiBase.interceptors.request.use(
