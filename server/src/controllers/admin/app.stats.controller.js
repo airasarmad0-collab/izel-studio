@@ -4,8 +4,11 @@ const VolumeModel = require("../../models/client/volume.schema");
 
 const appStats = async (req, res) => {
   try {
-    let productCount = await ProductModel.countDocuments();
-    let volumeCount = await VolumeModel.countDocuments();
+    // ✅ Run both counts in parallel - SAME RESPONSE STRUCTURE
+    const [productCount, volumeCount] = await Promise.all([
+      ProductModel.countDocuments(),
+      VolumeModel.countDocuments()
+    ]);
 
     return res.status(OK).json({
       success: true,
